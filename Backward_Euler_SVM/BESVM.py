@@ -12,7 +12,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
-np.seterr(divide='ignore', invalid='ignore')
+# np.seterr(divide='ignore', invalid='ignore')
 
 def read_dataset(feature_file, label_file):
     ''' Read data set in *.csv to data frame in Pandas'''
@@ -61,7 +61,7 @@ def predictor(X, c):
     '''predictor function '''
     return np.dot(X, c)
 
-class Backward_Euler_SVM():
+class Runge_Kutta_SVM():
     def __init__(self, X_train, y_train, lamda, epochs, learning_rate, tolerance = 1e-6, n = 100):
         self.X_train = X_train
         self.y_train = y_train
@@ -83,29 +83,42 @@ class Backward_Euler_SVM():
         gradient = c*(1/np.linalg.norm(c)) - self.lamda * np.dot(M.T, self.X_train).T
         return gradient
 
-    def F(self, y, c1, c0):
-        gradient = self.Sub_Gradient(y, c1)
-        return c1 - c0 - self.learning_rate * gradient
+    # def F(self, y, c1, c0):
+    #     gradient = self.Sub_Gradient(y, c1)
+    #     return c1 - c0 - self.learning_rate * gradient
 
-    def Steffensen(self, y, c):
-        iter = 0
-        c0 = c + self.F(y,c,c)
-        F = self.F(y, c0, c)
-        while any(abs(F) > self.tolerance) and iter < self.n:
-            F = self.F(y, c0, c)
-            G = self.F(y, c0+F, c)/F - 1
-            c_temp = c0 - F/G
-            c0 = c_temp
-            iter += 1
-        print(iter)
-        return c0
+    # def Steffensen(self, y, c):
+    #     iter = 0
+    #     c0 = c + self.F(y,c,c)
+    #     F = self.F(y, c0, c)
+    #     while any(abs(F) > self.tolerance) and iter < self.n:
+    #         F = self.F(y, c0, c)
+    #         G = self.F(y, c0+F, c)/F - 1
+    #         c_temp = c0 - F/G
+    #         c0 = c_temp
+    #         iter += 1
+    #     print(iter)
+    #     return c0
 
-    def Backward_Euler(self, y, c):
+    def BE(self, y, c1, c0):
         loss_history = [0]*self.epochs
-        for epoch in range(self.epochs):
+        yhat = predictor(self.X_train, c0)
+        loss_history[1] = self.loss(y, c0, yhat).ravel()
+        # print('epoch = ',1)
+        # print(loss_history[1])
+        yhat = predictor(self.X_train, c1)
+        loss_history[2] = self.loss(y, c1, yhat).ravel()
+        # print('epoch = ',2)
+        # print(loss_history[2])
+        for epoch in range(3,self.epochs):
+            gradient = self.Sub_Gradient(y, c1)
+            c = c0 - 2*self.learning_rate*(gradient)
             yhat = predictor(self.X_train, c)
             loss_history[epoch] = self.loss(y, c, yhat).ravel()
-            c = self.Steffensen(y, c)
+            # print('epoch =', epoch)
+            # print(loss_history[epoch])
+            c0 = c1
+            c1 = c
         return c,loss_history
 
     def SVM_binary_train(self, y_train_one_column):
@@ -114,12 +127,12 @@ class Backward_Euler_SVM():
                    y_train: binary labels
             Return: coeffs of the SVM model
         '''
-        # coeffs_0 = np.zeros((self.X_train.shape[1], 1))
-        # coeffs_0[0] = 1
-        coeffs_0 = np.random.rand(X_train.shape[1], 1)
-        # gradient = self.Sub_Gradient(y_train_one_column, coeffs_0)
-        # coeffs_1 = coeffs_0 + self.learning_rate * gradient
-        coeffs_grad, history_loss = self.Backward_Euler(y_train_one_column, coeffs_0)
+        coeffs_0 = np.zeros((self.X_train.shape[1], 1))
+        coeffs_0[0] = 1
+        # coeffs_0 = np.random.rand(X_train.shape[1], 1)
+        gradient = self.Sub_Gradient(y_train_one_column, coeffs_0)
+        coeffs_1 = coeffs_0 - self.learning_rate * gradient
+        coeffs_grad, history_loss = self.BE(y_train_one_column, coeffs_0,coeffs_1)
         return coeffs_grad
 
     def SVM_OVR_train(self):# y_train: one_hot_encoder labels
@@ -150,10 +163,6 @@ class Backward_Euler_SVM():
         for i in range(num_test_samples):
             ypred[i] = labels[np.argmax(decision_matrix[i,:])]
         return ypred
-
-
-
-
 
 # def gradient_descent(X, y, c, epochs=1000, learning_rate=0.0001):
 #     y = y.reshape(-1, 1) # convert y to a matrix nx1
@@ -207,10 +216,9 @@ print('Accuracy of library model ', accuracy(y_hat, y_test.ravel()))
 #==========================================================================
 print('===============================Start===================================')
 tic = time.process_time()
-mySVM = Backward_Euler_SVM(X_train_norm, y_train_ohe, lamda=0.01, epochs=10, learning_rate=0.01)
+mySVM = Runge_Kutta_SVM(X_train_norm, y_train_ohe, lamda=0.01, epochs=100, learning_rate=0.01)
 mySVM.SVM_OVR_train()
 ypred = mySVM.prediction(X_test_norm)
-print(ypred)
 toc = time.process_time()
 print('Totol time:' + str((toc - tic)) + 's')
 print('===============================Finish===================================')
