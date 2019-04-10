@@ -100,7 +100,7 @@ class Runge_Kutta_SVM():
     #     print(iter)
     #     return c0
 
-    def BE(self, y, c1, c0):
+    def AdmasMoulton(self, y, c1, c0):
         loss_history = [0]*self.epochs
         yhat = predictor(self.X_train, c0)
         loss_history[1] = self.loss(y, c0, yhat).ravel()
@@ -112,7 +112,7 @@ class Runge_Kutta_SVM():
         # print(loss_history[2])
         for epoch in range(3,self.epochs):
             gradient = 2*self.Sub_Gradient(y, c1) - self.Sub_Gradient(y, c0)
-            c = c1 - self.learning_rate*(gradient)
+            c = c1 - 1/2*self.learning_rate*(gradient+self.Sub_Gradient(y, c1))
             yhat = predictor(self.X_train, c)
             loss_history[epoch] = self.loss(y, c, yhat).ravel()
             # print('epoch =', epoch)
@@ -132,7 +132,7 @@ class Runge_Kutta_SVM():
         # coeffs_0 = np.random.rand(X_train.shape[1], 1)
         gradient = self.Sub_Gradient(y_train_one_column, coeffs_0)
         coeffs_1 = coeffs_0 - self.learning_rate * gradient
-        coeffs_grad, history_loss = self.BE(y_train_one_column, coeffs_0,coeffs_1)
+        coeffs_grad, history_loss = self.AdmasMoulton(y_train_one_column, coeffs_0,coeffs_1)
         return coeffs_grad
 
     def SVM_OVR_train(self):# y_train: one_hot_encoder labels
