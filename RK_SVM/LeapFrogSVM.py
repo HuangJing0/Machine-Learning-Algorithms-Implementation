@@ -72,8 +72,9 @@ class Runge_Kutta_SVM():
         self.n = n
 
     def loss(self, y_pred, c, y):
+        y_pred = y_pred.reshape(len(y),1)
         S = np.where(1 - y*y_pred > 0, 1 - y*y_pred, 0)
-        Loss_f =  self.lamda * S + np.linalg.norm(c,axis=0)
+        Loss_f =  self.lamda * np.sum(S) + np.linalg.norm(c,axis=0)
         return Loss_f
 
     def Sub_Gradient(self, y, c):
@@ -115,8 +116,6 @@ class Runge_Kutta_SVM():
             c = c0 - 2*self.learning_rate*(gradient)
             yhat = predictor(self.X_train, c)
             loss_history[epoch] = self.loss(y, c, yhat).ravel()
-            # print('epoch =', epoch)
-            # print(loss_history[epoch])
             c0 = c1
             c1 = c
         return c,loss_history
@@ -133,15 +132,20 @@ class Runge_Kutta_SVM():
         gradient = self.Sub_Gradient(y_train_one_column, coeffs_0)
         coeffs_1 = coeffs_0 - self.learning_rate * gradient
         coeffs_grad, history_loss = self.Runge_Kutta(y_train_one_column, coeffs_0,coeffs_1)
-        return coeffs_grad
+        return coeffs_grad, history_loss
 
     def SVM_OVR_train(self):# y_train: one_hot_encoder labels
         # y_train will have 10 columns
         self.weights_list = []
+        self.history_loss = []
         for i in range(self.y_train.shape[1]): # 10 columns
             y_train_one_column = self.y_train[:,i] # pick ith columns
-            weights_one_column = self.SVM_binary_train(y_train_one_column)
+            weights_one_column, history_loss = self.SVM_binary_train(y_train_one_column)
             self.weights_list.append(weights_one_column)
+            self.history_loss.append(history_loss)
+        np.savetxt('loss_Leap.txt',self.history_loss,fmt='%0.8f')
+
+
 
     def prediction(self, X_test):
         i = 0
@@ -216,7 +220,7 @@ print('Accuracy of library model ', accuracy(y_hat, y_test.ravel()))
 #==========================================================================
 print('===============================Start===================================')
 tic = time.process_time()
-mySVM = Runge_Kutta_SVM(X_train_norm, y_train_ohe, lamda=0.01, epochs=100, learning_rate=0.01)
+mySVM = Runge_Kutta_SVM(X_train_norm, y_train_ohe, lamda=0.01, epochs=200, learning_rate=0.0001)
 mySVM.SVM_OVR_train()
 ypred = mySVM.prediction(X_test_norm)
 toc = time.process_time()

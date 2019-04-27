@@ -111,15 +111,20 @@ class Runge_Kutta_SVM():
         loss_history[2] = self.loss(y, c1, yhat).ravel()
         # print('epoch = ',2)
         # print(loss_history[2])
+        V0 = -self.Sub_Gradient(y, c0)
         for epoch in range(3,self.epochs):
-            gradient = self.Sub_Gradient(y, c1) + (self.Sub_Gradient(y, c1) - self.Sub_Gradient(y, c0))
-            c = c1 - 1/2*self.learning_rate*(gradient+self.Sub_Gradient(y, c1))
+            V1 = V0 - (2*V0+ self.learning_rate * self.Sub_Gradient(y, c1))
+            gradient = 2*self.Sub_Gradient(y, c1) - self.Sub_Gradient(y, c0)
+            V = V1 - 2/3*((epoch-1)/(epoch-2)*V1+ self.learning_rate * gradient) + 1/2*((epoch-1)/(epoch-2)*V0+ self.learning_rate * self.Sub_Gradient(y, c0))
+            c = c1 + 1/2*self.learning_rate*(V0+V1)
             yhat = predictor(self.X_train, c)
             loss_history[epoch] = self.loss(y, c, yhat).ravel()
             # print('epoch =', epoch)
             # print(loss_history[epoch])
             c0 = c1
             c1 = c
+            V0 = V1
+            V1 = V
         return c,loss_history
 
     def SVM_binary_train(self, y_train_one_column):
@@ -220,7 +225,7 @@ print('Accuracy of library model ', accuracy(y_hat, y_test.ravel()))
 #==========================================================================
 print('===============================Start===================================')
 tic = time.process_time()
-mySVM = Runge_Kutta_SVM(X_train_norm, y_train_ohe, lamda=0.01, epochs=200, learning_rate=0.1)
+mySVM = Runge_Kutta_SVM(X_train_norm, y_train_ohe, lamda=0.01, epochs=200, learning_rate=0.01)
 mySVM.SVM_OVR_train()
 ypred = mySVM.prediction(X_test_norm)
 toc = time.process_time()

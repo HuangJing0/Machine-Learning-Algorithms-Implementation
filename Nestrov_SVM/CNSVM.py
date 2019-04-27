@@ -101,25 +101,22 @@ class Runge_Kutta_SVM():
     #     print(iter)
     #     return c0
 
-    def AdmasMoulton(self, y, c1, c0):
+    def BE(self, y, c0):
         loss_history = [0]*self.epochs
-        yhat = predictor(self.X_train, c0)
-        loss_history[1] = self.loss(y, c0, yhat).ravel()
-        # print('epoch = ',1)
-        # print(loss_history[1])
-        yhat = predictor(self.X_train, c1)
-        loss_history[2] = self.loss(y, c1, yhat).ravel()
         # print('epoch = ',2)
         # print(loss_history[2])
+        V0 = self.Sub_Gradient(y, c0)
         for epoch in range(3,self.epochs):
-            gradient = self.Sub_Gradient(y, c1) + (self.Sub_Gradient(y, c1) - self.Sub_Gradient(y, c0))
-            c = c1 - 1/2*self.learning_rate*(gradient+self.Sub_Gradient(y, c1))
+            temp = (c0 + c0 - self.learning_rate*self.Sub_Gradient(y,c0))/2
+            gradient = self.Sub_Gradient(y,temp)
+            V = V0 - ((epoch-1)/(epoch-2)*V0+ self.learning_rate * gradient)
+            c = c0 + self.learning_rate*V
             yhat = predictor(self.X_train, c)
             loss_history[epoch] = self.loss(y, c, yhat).ravel()
             # print('epoch =', epoch)
             # print(loss_history[epoch])
-            c0 = c1
-            c1 = c
+            c0 = c
+            V0 = V
         return c,loss_history
 
     def SVM_binary_train(self, y_train_one_column):
@@ -131,9 +128,7 @@ class Runge_Kutta_SVM():
         coeffs_0 = np.zeros((self.X_train.shape[1], 1))
         coeffs_0[0] = 1
         # coeffs_0 = np.random.rand(X_train.shape[1], 1)
-        gradient = self.Sub_Gradient(y_train_one_column, coeffs_0)
-        coeffs_1 = coeffs_0 - self.learning_rate * gradient
-        coeffs_grad, history_loss = self.AdmasMoulton(y_train_one_column, coeffs_0,coeffs_1)
+        coeffs_grad, history_loss = self.BE(y_train_one_column, coeffs_0)
         return coeffs_grad,history_loss
 
     def SVM_OVR_train(self):# y_train: one_hot_encoder labels
@@ -145,7 +140,7 @@ class Runge_Kutta_SVM():
             weights_one_column,history_loss = self.SVM_binary_train(y_train_one_column)
             self.history_loss.append(history_loss)
             self.weights_list.append(weights_one_column)
-        np.savetxt('loss_Mol.txt',self.history_loss,fmt='%0.8f')
+        np.savetxt('loss_CN.txt',self.history_loss,fmt='%0.8f')
 
     def prediction(self, X_test):
         i = 0
@@ -220,7 +215,7 @@ print('Accuracy of library model ', accuracy(y_hat, y_test.ravel()))
 #==========================================================================
 print('===============================Start===================================')
 tic = time.process_time()
-mySVM = Runge_Kutta_SVM(X_train_norm, y_train_ohe, lamda=0.01, epochs=200, learning_rate=0.1)
+mySVM = Runge_Kutta_SVM(X_train_norm, y_train_ohe, lamda=0.01, epochs=300, learning_rate=0.001)
 mySVM.SVM_OVR_train()
 ypred = mySVM.prediction(X_test_norm)
 toc = time.process_time()
