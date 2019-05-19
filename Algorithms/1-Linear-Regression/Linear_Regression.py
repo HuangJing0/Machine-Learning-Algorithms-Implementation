@@ -6,10 +6,8 @@ Created on Wed Jan 16 18:42:10 2019
 @author: jing
 """
 
-import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
-import time
+import numpy as np
 
 def read_dataset(feature_file, label_file):
     ''' Read data set in *.csv to data frame in Pandas'''
@@ -19,6 +17,12 @@ def read_dataset(feature_file, label_file):
     y = df_y.values # convert values in dataframe to numpy array (label)
     return X, y
 
+X_train, y_train = read_dataset('airfoil_self_noise_X_train.csv', 'airfoil_self_noise_y_train.csv')
+X_test, y_test = read_dataset('airfoil_self_noise_X_test.csv', 'airfoil_self_noise_y_test.csv')
+
+print('Shape of X_train ', X_train.shape)
+print('Shape of X_test ', X_test.shape)
+
 def normalize_features(X_train, X_test):
     from sklearn.preprocessing import StandardScaler #import libaray
     scaler = StandardScaler() # call an object function
@@ -27,44 +31,12 @@ def normalize_features(X_train, X_test):
     X_test_norm = scaler.transform(X_test) # we use the same normalization on X_test
     return X_train_norm, X_test_norm
 
-class KNN():
-    def __init__(self, k):
-        ''' initalize the decision trees parameters '''
-        self.k = k
-
-    def predict(self, X_test, X_train, y_train):
-        ypred = np.zeros(X_test.shape[0])
-        for i in range(X_test.shape[0]):
-            Counts = np.zeros((X_train.shape[0], 2))
-            for j in range(X_train.shape[0]):
-                distance = np.linalg.norm(X_test[i]-X_train[j])
-                Counts[j] = [distance, y_train[j]]
-                # Sort distance from small to large
-                knn = Counts[Counts[:,0].argsort()][:self.k]
-                count = np.bincount(knn[:,1].astype('int'))
-                ypred[i] = count.argmax()
-        return ypred
-
-def accuracy(ypred, yexact):
-    p = np.array(ypred == yexact, dtype = int)
-    return np.sum(p)/float(len(yexact))
-
-X_train, y_train = read_dataset('Digits_X_train.csv', 'Digits_y_train.csv')
-X_test, y_test = read_dataset('Digits_X_test.csv', 'Digits_y_test.csv')
 X_train_norm, X_test_norm = normalize_features(X_train, X_test)
+print(X_test_norm)
 
-print(X_train.shape)
-print(X_test.shape)
-print(y_train.shape)
-print(y_test.shape)
+class LinearRegression:
+    def __init__(self, X, y, lr=0.01, Lambda = 0.1):
 
-print('===============================Start===================================')
-tic = time.process_time()
+    def fit:
 
-myknn = KNN(k=5)
-y_pred = myknn.predict(X_test_norm, X_train_norm, y_train)
-print('Accuracy of our model ', accuracy(y_pred, y_test.ravel()))
-toc = time.process_time()
-
-print('Totol time:' + str((toc - tic)) + 's')
-print('===============================Finish===================================')
+    def predict:
