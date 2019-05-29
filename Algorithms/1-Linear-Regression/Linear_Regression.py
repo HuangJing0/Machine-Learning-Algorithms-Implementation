@@ -35,8 +35,31 @@ X_train_norm, X_test_norm = normalize_features(X_train, X_test)
 print(X_test_norm)
 
 class LinearRegression:
-    def __init__(self, X, y, lr=0.01, Lambda = 0.1):
+    def __init__(self, n_iter=3000, lr=0.01, Lambda = 0.1):
+        self.n_iter = n_iter
+        self.lr = lr
+        self.Lambda = Lambda
 
-    def fit:
+    def initialized_weight(self, m):
+        limit = np.sqrt(1/m)
+        w = np.random.uniform(-limit, limit, (m, 1))
+        b = 0
+        self.w = np.insert(w,0,b,axis=0)
 
-    def predict:
+    def fit(self, X, y):
+        n, m = X.Shape # m: number of features, n: number of samples
+        self.initialized_weight(m)
+        X = np.insert(X,0,1,axis=0)
+        y = np.reshape(y, (n,1))
+        self.train_error = []
+
+    def gradident_descent(self,):
+        for i in range(self.n_iter):
+            y_pred = X.dot(self.w)
+            current_loss = self.loss()
+            self.train_error.append(current_loss)
+            print(current_loss)
+            w_grad = X.T.dot(y_pred - y) + self.Lambda*self.w
+            self.w = self.w - self.lr*w_grad
+            
+    def predict():
